@@ -1,18 +1,10 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { UserProfile, WorkoutPlan, WorkoutDay, WorkoutSession } from "../types";
 
-// Helper para obter API KEY de forma segura em ambientes browser/vite
-const getApiKey = () => {
-  try {
-    return process.env.API_KEY;
-  } catch (error) {
-    // Evita crash se process não estiver definido no navegador
-    return '';
-  }
-};
-
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: getApiKey() || '' });
+// A chave deve ser acessada DIRETAMENTE via process.env.API_KEY para que o Vite faça a injeção correta.
+// Não use funções wrappers ou try/catch ao redor da variável de ambiente neste contexto.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_NAME = 'gemini-2.5-flash';
 
@@ -52,10 +44,10 @@ const workoutPlanSchema: Schema = {
 };
 
 export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial<WorkoutPlan> | null> => {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    console.error("API Key missing");
-    throw new Error("API Key is missing. Please configure it.");
+  // Verificação simples se a chave foi injetada (embora o erro seja pego no catch abaixo)
+  if (!process.env.API_KEY) {
+    console.error("API Key não encontrada em process.env.API_KEY");
+    throw new Error("Chave de API não configurada. Verifique o ambiente.");
   }
 
   const prompt = `
@@ -134,7 +126,7 @@ export const adjustWorkoutSuggestion = async (
   history: WorkoutSession[]
 ): Promise<string> => {
    // Function to generate a text suggestion for progression
-   if (!getApiKey()) return "Configure a API Key para receber sugestões.";
+   if (!process.env.API_KEY) return "Configure a API Key para receber sugestões.";
 
    const prompt = `
     Analise o progresso recente do aluno.

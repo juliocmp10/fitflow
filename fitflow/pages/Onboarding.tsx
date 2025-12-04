@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { UserProfile, Goal, Level } from '../types';
 import { generateWorkoutPlan } from '../services/geminiService';
-import { Loader2, CheckCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Loader2, CheckCircle, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 
 const STEPS = 5;
 
@@ -46,10 +46,11 @@ const Onboarding = () => {
             addPlan(plan as any);
             navigate('/');
         } else {
-            setError("Falha ao gerar treino. Tente novamente.");
+            setError("Falha ao gerar treino: Resposta vazia da IA.");
         }
-      } catch (err) {
-        setError("Erro ao conectar com a IA. Verifique sua chave API ou conexão.");
+      } catch (err: any) {
+        console.error("Onboarding Error:", err);
+        setError(err.message || "Erro ao conectar com a IA. Verifique sua conexão.");
       } finally {
         setLoading(false);
       }
@@ -185,8 +186,9 @@ const Onboarding = () => {
             )}
 
             {error && (
-                <div className="mt-4 p-3 bg-red-900/30 border border-red-800 text-red-400 rounded-lg text-sm">
-                    {error}
+                <div className="mt-4 p-4 bg-red-900/20 border border-red-900/50 text-red-400 rounded-lg text-sm flex items-start gap-3">
+                    <AlertTriangle className="shrink-0 mt-0.5" size={18} />
+                    <span>{error}</span>
                 </div>
             )}
 
