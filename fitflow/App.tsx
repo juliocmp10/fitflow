@@ -2,6 +2,7 @@ import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Layout } from './components/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
@@ -62,11 +63,13 @@ const AppContent = () => {
 
 function App() {
   return (
-    <StoreProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </StoreProvider>
+    <ErrorBoundary>
+      <StoreProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </StoreProvider>
+    </ErrorBoundary>
   );
 }
 

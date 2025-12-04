@@ -29,12 +29,31 @@
       .pt-safe {
         padding-top: env(safe-area-inset-top);
       }
+
+      /* Estilo para a tela de erro global (fallback) */
+      #global-error {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #0a0a0a;
+        color: white;
+        z-index: 9999;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        text-align: center;
+      }
     </style>
   <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.1/client",
     "react/": "https://aistudiocdn.com/react@^19.2.1/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
@@ -48,6 +67,45 @@
 </head>
   <body class="bg-neutral-950 text-neutral-50 antialiased selection:bg-orange-500/30">
     <div id="root"></div>
+    
+    <!-- Elemento de erro global oculto por padrão -->
+    <div id="global-error">
+        <h2 class="text-2xl font-bold text-red-500 mb-4">Ops! Erro de Inicialização</h2>
+        <p class="text-neutral-400 mb-6 max-w-md">Ocorreu um erro crítico ao carregar os módulos do aplicativo. Isso geralmente é resolvido limpando os dados locais.</p>
+        <button onclick="localStorage.clear(); window.location.reload()" class="bg-orange-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-700 transition shadow-lg">
+            Resetar App e Reiniciar
+        </button>
+        <p id="error-details" class="mt-8 text-xs font-mono text-neutral-700 bg-black p-4 rounded max-w-full overflow-auto text-left"></p>
+    </div>
+
+    <!-- Script de Segurança Global: Executa antes de tudo para pegar erros de importação -->
+    <script>
+      window.addEventListener('error', function(event) {
+        const root = document.getElementById('root');
+        const errorEl = document.getElementById('global-error');
+        const detailsEl = document.getElementById('error-details');
+        
+        // Se o root estiver vazio ou com erro, mostramos a tela de erro
+        if (root && (!root.hasChildNodes() || root.innerHTML === '')) {
+            console.error("Critical Global Error:", event.error || event.message);
+            errorEl.style.display = 'flex';
+            detailsEl.textContent = "Erro: " + (event.message || event.error?.message || "Desconhecido");
+        }
+      });
+
+      // Pega erros de Promise (ex: falha ao carregar importmap)
+      window.addEventListener('unhandledrejection', function(event) {
+        const errorEl = document.getElementById('global-error');
+        console.error("Unhandled Rejection:", event.reason);
+        // Apenas mostra se o app não carregou
+        const root = document.getElementById('root');
+        if (root && (!root.hasChildNodes())) {
+             errorEl.style.display = 'flex';
+             document.getElementById('error-details').textContent = "Erro Async: " + event.reason;
+        }
+      });
+    </script>
+
     <script type="module" src="/fitflow/index.tsx"></script>
   </body>
 </html>

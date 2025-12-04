@@ -39,16 +39,6 @@ const workoutPlanSchema: Schema = {
   required: ["planName", "days"]
 };
 
-// Helper para obter o cliente APENAS quando necessário
-// Isso previne que o app quebre na inicialização se a chave estiver faltando ou process.env falhar
-const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("Chave de API não configurada no ambiente.");
-  }
-  return new GoogleGenAI({ apiKey });
-};
-
 export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial<WorkoutPlan> | null> => {
   const prompt = `
     Atue como um treinador físico de elite e fisiologista.
@@ -70,8 +60,7 @@ export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial
   `;
 
   try {
-    // Inicializa o cliente aqui, dentro do try/catch
-    const ai = getAiClient();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -125,6 +114,7 @@ export const adjustWorkoutSuggestion = async (
   currentPlan: WorkoutPlan,
   history: WorkoutSession[]
 ): Promise<string> => {
+   // Ensure API key is available (it should be, but just in case for logic flow)
    if (!process.env.API_KEY) return "Configure a API Key para receber sugestões.";
 
    const prompt = `
@@ -135,7 +125,7 @@ export const adjustWorkoutSuggestion = async (
    `;
 
    try {
-    const ai = getAiClient();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
