@@ -25,14 +25,36 @@ const INITIAL_STATE: UserState = {
 };
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize from local storage if available
+  // Initialize from local storage safely
   const [state, setState] = useState<UserState>(() => {
-    const saved = localStorage.getItem('fitflow_state_v2'); // Changed key to reset for new auth structure
-    return saved ? JSON.parse(saved) : INITIAL_STATE;
+    try {
+      const saved = localStorage.getItem('fitflow_state_v2');
+      if (!saved) return INITIAL_STATE;
+      
+      const parsed = JSON.parse(saved);
+      
+      // Merge with INITIAL_STATE to ensure all fields exist (Sanitization)
+      return {
+        ...INITIAL_STATE,
+        ...parsed,
+        // Guarantee arrays are arrays to prevent .map/.length crashes
+        registeredUsers: Array.isArray(parsed.registeredUsers) ? parsed.registeredUsers : [],
+        plans: Array.isArray(parsed.plans) ? parsed.plans : [],
+        sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+        exerciseLibrary: Array.isArray(parsed.exerciseLibrary) ? parsed.exerciseLibrary : [],
+      };
+    } catch (e) {
+      console.error("Erro ao carregar estado:", e);
+      return INITIAL_STATE;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('fitflow_state_v2', JSON.stringify(state));
+    try {
+      localStorage.setItem('fitflow_state_v2', JSON.stringify(state));
+    } catch (e) {
+      console.error("Erro ao salvar estado:", e);
+    }
   }, [state]);
 
   const register = async (name: string, email: string, password: string) => {
@@ -51,7 +73,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 password
             };
 
-            // Also create a default empty profile for the user
             const initialProfile: UserProfile = {
                 name: name,
                 goal: 'hipertrofia',
@@ -68,11 +89,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 currentUserEmail: email,
                 isAuthenticated: true,
                 profile: initialProfile,
-                plans: [], // New user starts with no plans
+                plans: [],
                 sessions: []
             }));
             resolve();
-        }, 800); // Fake network delay
+        }, 800);
     });
   };
 
@@ -82,19 +103,19 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             const user = state.registeredUsers.find(u => u.email === email && u.password === password);
             
             if (user) {
-                // In a real app, we would fetch the user's specific data here. 
-                // For this LocalStorage demo, since we store everything in one big object,
-                // we are keeping it simple. Ideally, plans/sessions should be keyed by userId.
-                // For now, we assume the single state object belongs to the active user (limitation of this simple demo architecture).
-                // To fix this properly, we'd need to restructure state to be { users: map, data: { userId: { plans: [] } } }.
-                // For this specific request, checking credentials is sufficient.
-                
                 setState(prev => ({ 
                     ...prev, 
                     isAuthenticated: true, 
                     currentUserEmail: user.email,
-                    // If we had multi-user data isolation in this demo structure, we would load it here.
-                    profile: { ...prev.profile!, name: user.name } 
+                    profile: { ...(prev.profile || {
+                        name: user.name,
+                        goal: 'hipertrofia',
+                        level: 'iniciante',
+                        daysPerWeek: 3,
+                        equipment: [],
+                        limitations: '',
+                        preferences: ''
+                    }), name: user.name } 
                 }));
                 resolve();
             } else {
@@ -117,11 +138,15 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addPlan = (plan: WorkoutPlan) => {
-    const updatedPlans = state.plans.map(p => ({ ...p, isActive: false }));
-    setState(prev => ({
-      ...prev,
-      plans: [plan, ...updatedPlans]
-    }));
+    setState(prev => {
+        // Ensure plans is array
+        const currentPlans = Array.isArray(prev.plans) ? prev.plans : [];
+        const updatedPlans = currentPlans.map(p => ({ ...p, isActive: false }));
+        return {
+            ...prev,
+            plans: [plan, ...updatedPlans]
+        };
+    });
   };
 
   const deletePlan = (id: string) => {

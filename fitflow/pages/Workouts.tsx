@@ -6,6 +6,9 @@ import { Link, useNavigate } from 'react-router-dom';
 const Workouts = () => {
   const { plans, deletePlan, setActivePlan } = useStore();
   const navigate = useNavigate();
+  
+  // Safe access
+  const safePlans = Array.isArray(plans) ? plans : [];
 
   return (
     <div className="space-y-6">
@@ -31,7 +34,7 @@ const Workouts = () => {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {plans.map(plan => (
+        {safePlans.map(plan => (
           <div key={plan.id} className={`group relative bg-neutral-900 rounded-3xl p-6 border transition-all duration-300 ${plan.isActive ? 'border-orange-500 shadow-xl shadow-orange-900/10' : 'border-white/5 hover:border-white/10 hover:bg-neutral-800/50'}`}>
             
             {/* Background Decoration */}
@@ -89,7 +92,7 @@ const Workouts = () => {
                         <span className="text-xs text-neutral-500 uppercase tracking-wide font-bold">Dias</span>
                         <div className="flex items-center gap-2 mt-1">
                             <Calendar className="text-orange-500 w-4 h-4" />
-                            <span className="text-lg font-bold text-white">{plan.days.length}</span>
+                            <span className="text-lg font-bold text-white">{plan.days?.length || 0}</span>
                         </div>
                     </div>
                     <div>
@@ -97,7 +100,7 @@ const Workouts = () => {
                         <div className="flex items-center gap-2 mt-1">
                             <LayoutList className="text-blue-500 w-4 h-4" />
                             <span className="text-lg font-bold text-white">
-                                {plan.days.reduce((acc, day) => acc + day.exercises.length, 0)}
+                                {plan.days ? plan.days.reduce((acc, day) => acc + (day.exercises?.length || 0), 0) : 0}
                             </span>
                         </div>
                     </div>
@@ -113,7 +116,7 @@ const Workouts = () => {
           </div>
         ))}
 
-        {plans.length === 0 && (
+        {safePlans.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center text-center py-20 bg-neutral-900/50 rounded-3xl border border-dashed border-white/10">
                 <div className="w-16 h-16 bg-neutral-800 rounded-full flex items-center justify-center mb-6">
                     <Dumbbell className="w-8 h-8 text-neutral-600" />

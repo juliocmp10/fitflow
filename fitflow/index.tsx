@@ -8,8 +8,14 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+
+try {
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} catch (e) {
+  console.error("FATAL RENDER ERROR:", e);
+  rootElement.innerHTML = `<div style="color:white; padding:20px;">Ocorreu um erro fatal ao iniciar o app. Limpe o cache do navegador e tente novamente.</div>`;
+}

@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 
 const StatCard = ({ icon: Icon, label, value, gradient }: any) => (
   <div className={`relative overflow-hidden p-5 rounded-2xl border border-white/5 shadow-lg ${gradient}`}>
-    {/* Background Pattern */}
     <div className="absolute -right-4 -top-4 opacity-10 rotate-12">
         <Icon size={80} />
     </div>
@@ -23,10 +22,15 @@ const StatCard = ({ icon: Icon, label, value, gradient }: any) => (
 
 const Dashboard = () => {
   const { profile, plans, sessions } = useStore();
-  const activePlan = plans.find(p => p.isActive) || plans[0];
+
+  // Safety checks
+  const safePlans = Array.isArray(plans) ? plans : [];
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  
+  const activePlan = safePlans.find(p => p.isActive) || safePlans[0];
 
   // Prepare chart data (Last 7 sessions volume)
-  const chartData = sessions.slice(0, 7).reverse().map((s, i) => ({
+  const chartData = safeSessions.slice(0, 7).reverse().map((s, i) => ({
     name: `T${i + 1}`,
     volume: s.totalVolume
   }));
@@ -46,24 +50,24 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Stats Grid - Responsive Grid that scrolls on tiny screens if needed */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
             icon={Trophy} 
             label="Treinos" 
-            value={sessions.length} 
+            value={safeSessions.length} 
             gradient="bg-gradient-to-br from-neutral-800 to-neutral-900" 
         />
         <StatCard 
             icon={Zap} 
             label="Nível" 
-            value={profile?.level?.charAt(0).toUpperCase() + profile?.level?.slice(1)} 
+            value={profile?.level ? (profile.level.charAt(0).toUpperCase() + profile.level.slice(1)) : 'Iniciante'} 
             gradient="bg-gradient-to-br from-orange-900/50 to-neutral-900" 
         />
         <StatCard 
             icon={Activity} 
             label="Volume Total" 
-            value={`${(sessions.reduce((acc, s) => acc + s.totalVolume, 0) / 1000).toFixed(1)}k kg`} 
+            value={`${(safeSessions.reduce((acc, s) => acc + s.totalVolume, 0) / 1000).toFixed(1)}k kg`} 
             gradient="bg-gradient-to-br from-blue-900/40 to-neutral-900" 
         />
         <StatCard 
@@ -88,7 +92,7 @@ const Dashboard = () => {
             
             {activePlan ? (
                 <div className="grid sm:grid-cols-2 gap-4">
-                    {activePlan.days.slice(0, 4).map((day, idx) => (
+                    {activePlan.days && activePlan.days.slice(0, 4).map((day, idx) => (
                         <div key={day.id} className="group relative bg-neutral-800/40 hover:bg-neutral-800/80 p-4 rounded-2xl border border-white/5 hover:border-orange-500/30 transition-all duration-300">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -98,7 +102,7 @@ const Dashboard = () => {
                                         </span>
                                         <h3 className="font-bold text-white text-sm truncate max-w-[120px]">{day.name}</h3>
                                     </div>
-                                    <p className="text-xs text-neutral-400">{day.exercises.length} exercícios</p>
+                                    <p className="text-xs text-neutral-400">{day.exercises?.length || 0} exercícios</p>
                                 </div>
                                 <Link 
                                     to={`/session/${activePlan.id}/${day.id}`}
@@ -109,7 +113,7 @@ const Dashboard = () => {
                             </div>
                         </div>
                     ))}
-                    {activePlan.days.length === 0 && <p className="text-neutral-500">Este plano não tem dias configurados.</p>}
+                    {(!activePlan.days || activePlan.days.length === 0) && <p className="text-neutral-500">Este plano não tem dias configurados.</p>}
                 </div>
             ) : (
                 <div className="text-center py-10 bg-neutral-800/20 rounded-2xl border border-dashed border-white/10">
