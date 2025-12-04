@@ -3,21 +3,30 @@ import react from '@vitejs/plugin-react';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  // Carrega variáveis de ambiente do diretório atual
   const env = loadEnv(mode, '.', '');
 
   return {
     plugins: [react()],
-    // Permite acesso de rede externa (necessário para alguns ambientes de cloud/container)
+    // Garante caminhos absolutos para o deploy (crucial para Vercel)
+    base: '/',
     server: {
+      // Permite acesso externo (0.0.0.0), essencial para ambientes cloud/container
       host: true,
+      port: 5173,
+      strictPort: true,
     },
     define: {
-      // Substituição segura de variáveis de ambiente
+      // Injeta a API Key de forma segura durante o build
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env': JSON.stringify({}), 
+      // Polyfill para evitar crashes em libs que esperam ambiente Node
+      'process.env': {}, 
     },
     build: {
       outDir: 'dist',
+      assetsDir: 'assets',
+      sourcemap: false, // Desabilita sourcemaps em produção para economizar banda
+      emptyOutDir: true,
       chunkSizeWarningLimit: 1600,
       rollupOptions: {
         output: {
