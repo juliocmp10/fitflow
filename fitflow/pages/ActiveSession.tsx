@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { ArrowLeft, Play, Pause, Check, RotateCcw, AlertCircle, Trophy, SkipForward } from 'lucide-react';
 import { WorkoutSession } from '../types';
+import { generateId } from '../utils';
 
 const ActiveSession = () => {
   const { planId, dayId } = useParams();
@@ -70,7 +71,7 @@ const ActiveSession = () => {
 
   const handleFinishWorkout = () => {
     const session: WorkoutSession = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         planId: plan.id,
         dayId: day.id,
         date: new Date().toISOString(),

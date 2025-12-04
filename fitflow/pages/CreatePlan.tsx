@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { WorkoutPlan, WorkoutDay, WorkoutExercise } from '../types';
+import { generateId } from '../utils';
 import { Plus, Trash2, Save, X, Search, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
 
 // Comprehensive Database of Exercises
@@ -105,7 +106,7 @@ const CreatePlan = () => {
   
   const [planName, setPlanName] = useState('Meu Novo Treino');
   const [days, setDays] = useState<WorkoutDay[]>([
-    { id: crypto.randomUUID(), name: 'Treino A', exercises: [] }
+    { id: generateId(), name: 'Treino A', exercises: [] }
   ]);
 
   // Modal State
@@ -117,7 +118,7 @@ const CreatePlan = () => {
   const categories = ['Todos', ...Array.from(new Set(AVAILABLE_EXERCISES.map(e => e.muscle)))];
 
   const handleAddDay = () => {
-    setDays([...days, { id: crypto.randomUUID(), name: `Treino ${String.fromCharCode(65 + days.length)}`, exercises: [] }]);
+    setDays([...days, { id: generateId(), name: `Treino ${String.fromCharCode(65 + days.length)}`, exercises: [] }]);
   };
 
   const handleRemoveDay = (id: string) => {
@@ -237,7 +238,7 @@ const CreatePlan = () => {
 
   const handleSavePlan = () => {
     const newPlan: WorkoutPlan = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: planName,
       createdAt: new Date().toISOString(),
       isActive: true,

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserState, UserProfile, WorkoutPlan, WorkoutSession, UserAccount } from '../types';
+import { generateId } from '../utils';
 
 interface StoreContextType extends UserState {
   login: (email: string, password: string) => Promise<void>;
@@ -33,6 +34,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       
       const parsed = JSON.parse(saved);
       
+      // Validação básica se o que veio do storage é um objeto válido
+      if (typeof parsed !== 'object' || parsed === null) return INITIAL_STATE;
+
       // Merge with INITIAL_STATE to ensure all fields exist (Sanitization)
       return {
         ...INITIAL_STATE,
@@ -45,6 +49,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       };
     } catch (e) {
       console.error("Erro ao carregar estado:", e);
+      // Em caso de erro grave no parse, limpa o storage para evitar loop de erro
+      try { localStorage.removeItem('fitflow_state_v2'); } catch {}
       return INITIAL_STATE;
     }
   });
@@ -67,7 +73,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             }
 
             const newUser: UserAccount = {
-                id: crypto.randomUUID(),
+                id: generateId(),
                 name,
                 email,
                 password

@@ -1,10 +1,6 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { UserProfile, WorkoutPlan, WorkoutDay, WorkoutSession } from "../types";
-
-// Initialize Gemini Client
-// A chave deve ser acessada DIRETAMENTE via process.env.API_KEY para que o Vite faça a injeção correta.
-// Não use funções wrappers ou try/catch ao redor da variável de ambiente neste contexto.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { UserProfile, WorkoutPlan, WorkoutSession } from "../types";
+import { generateId } from "../utils";
 
 const MODEL_NAME = 'gemini-2.5-flash';
 
@@ -43,13 +39,17 @@ const workoutPlanSchema: Schema = {
   required: ["planName", "days"]
 };
 
-export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial<WorkoutPlan> | null> => {
-  // Verificação simples se a chave foi injetada (embora o erro seja pego no catch abaixo)
-  if (!process.env.API_KEY) {
-    console.error("API Key não encontrada em process.env.API_KEY");
-    throw new Error("Chave de API não configurada. Verifique o ambiente.");
+// Helper para obter o cliente APENAS quando necessário
+// Isso previne que o app quebre na inicialização se a chave estiver faltando ou process.env falhar
+const getAiClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("Chave de API não configurada no ambiente.");
   }
+  return new GoogleGenAI({ apiKey });
+};
 
+export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial<WorkoutPlan> | null> => {
   const prompt = `
     Atue como um treinador físico de elite e fisiologista.
     Crie um plano de treino completo para o seguinte perfil de aluno:
@@ -70,45 +70,45 @@ export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial
   `;
 
   try {
+    // Inicializa o cliente aqui, dentro do try/catch
+    const ai = getAiClient();
+    
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: workoutPlanSchema,
-        temperature: 0.4, // Lower temperature for more consistent structured data
+        temperature: 0.4,
       }
     });
 
     let text = response.text;
     if (!text) return null;
 
-    // Clean up markdown code blocks if present (fixes common JSON parse errors)
     text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-
     const data = JSON.parse(text);
 
-    // Transform API response to our internal WorkoutPlan type
     const newPlan: Partial<WorkoutPlan> = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: data.planName,
       createdAt: new Date().toISOString(),
       isActive: true,
       days: data.days.map((day: any, index: number) => ({
-        id: `day-${index}-${crypto.randomUUID()}`,
+        id: `day-${index}-${generateId()}`,
         name: day.name,
         exercises: day.exercises.map((ex: any, i: number) => ({
-          exerciseId: `ex-${i}-${crypto.randomUUID()}`, // In a real app, map to DB ID
+          exerciseId: `ex-${i}-${generateId()}`,
           exerciseName: ex.exerciseName,
           muscleGroup: ex.muscleGroup,
           sets: ex.sets,
           details: {
             reps: ex.reps,
-            weight: 0, // User sets weight later
+            weight: 0,
             restSeconds: ex.restSeconds
           },
           notes: ex.notes,
-          instructions: ex.instructions // Storing instructions here for simplicity
+          instructions: ex.instructions
         }))
       }))
     };
@@ -125,7 +125,6 @@ export const adjustWorkoutSuggestion = async (
   currentPlan: WorkoutPlan,
   history: WorkoutSession[]
 ): Promise<string> => {
-   // Function to generate a text suggestion for progression
    if (!process.env.API_KEY) return "Configure a API Key para receber sugestões.";
 
    const prompt = `
@@ -136,6 +135,7 @@ export const adjustWorkoutSuggestion = async (
    `;
 
    try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: prompt,
