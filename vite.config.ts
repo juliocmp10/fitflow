@@ -8,24 +8,22 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    // Garante caminhos absolutos para o deploy (crucial para Vercel)
+    // Garante caminhos absolutos para o deploy
     base: '/',
     server: {
-      // Permite acesso externo (0.0.0.0), essencial para ambientes cloud/container
       host: true,
       port: 5173,
       strictPort: true,
     },
     define: {
-      // Injeta a API Key de forma segura durante o build
+      // Injeta a API Key de forma segura. 
+      // IMPORTANTE: Não sobrescrever 'process.env' inteiro, pois remove a chave injetada.
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      // Polyfill para evitar crashes em libs que esperam ambiente Node
-      'process.env': {}, 
     },
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
-      sourcemap: false, // Desabilita sourcemaps em produção para economizar banda
+      sourcemap: false,
       emptyOutDir: true,
       chunkSizeWarningLimit: 1600,
       rollupOptions: {

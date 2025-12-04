@@ -25,6 +25,27 @@ const INITIAL_STATE: UserState = {
   exerciseLibrary: []
 };
 
+// Função auxiliar para garantir que a estrutura dos dados esteja correta (Sanitização)
+const sanitizeState = (data: any): UserState => {
+  const base = { ...INITIAL_STATE, ...data };
+  
+  // Garante que listas sejam arrays
+  base.registeredUsers = Array.isArray(base.registeredUsers) ? base.registeredUsers : [];
+  base.sessions = Array.isArray(base.sessions) ? base.sessions : [];
+  base.exerciseLibrary = Array.isArray(base.exerciseLibrary) ? base.exerciseLibrary : [];
+  
+  // Sanitização profunda dos planos para evitar crash no map()
+  base.plans = Array.isArray(base.plans) ? base.plans.map((p: any) => ({
+    ...p,
+    days: Array.isArray(p.days) ? p.days.map((d: any) => ({
+      ...d,
+      exercises: Array.isArray(d.exercises) ? d.exercises : []
+    })) : []
+  })) : [];
+
+  return base;
+};
+
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Initialize from local storage safely
   const [state, setState] = useState<UserState>(() => {
@@ -33,23 +54,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (!saved) return INITIAL_STATE;
       
       const parsed = JSON.parse(saved);
-      
-      // Validação básica se o que veio do storage é um objeto válido
       if (typeof parsed !== 'object' || parsed === null) return INITIAL_STATE;
 
-      // Merge with INITIAL_STATE to ensure all fields exist (Sanitization)
-      return {
-        ...INITIAL_STATE,
-        ...parsed,
-        // Guarantee arrays are arrays to prevent .map/.length crashes
-        registeredUsers: Array.isArray(parsed.registeredUsers) ? parsed.registeredUsers : [],
-        plans: Array.isArray(parsed.plans) ? parsed.plans : [],
-        sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
-        exerciseLibrary: Array.isArray(parsed.exerciseLibrary) ? parsed.exerciseLibrary : [],
-      };
+      return sanitizeState(parsed);
     } catch (e) {
       console.error("Erro ao carregar estado:", e);
-      // Em caso de erro grave no parse, limpa o storage para evitar loop de erro
       try { localStorage.removeItem('fitflow_state_v2'); } catch {}
       return INITIAL_STATE;
     }
@@ -145,7 +154,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const addPlan = (plan: WorkoutPlan) => {
     setState(prev => {
-        // Ensure plans is array
         const currentPlans = Array.isArray(prev.plans) ? prev.plans : [];
         const updatedPlans = currentPlans.map(p => ({ ...p, isActive: false }));
         return {
