@@ -77,8 +77,12 @@ export const Layout = () => {
                         : 'text-neutral-400 hover:text-white hover:bg-white/5'
                     }`}
                 >
-                    <item.icon size={20} className={({ isActive }: any) => isActive ? 'text-white' : 'text-neutral-400 group-hover:text-white transition-colors'} />
-                    <span>{item.label}</span>
+                    {({ isActive }) => (
+                        <>
+                            <item.icon size={20} className={isActive ? 'text-white' : 'text-neutral-400 group-hover:text-white transition-colors'} />
+                            <span>{item.label}</span>
+                        </>
+                    )}
                 </NavLink>
             ))}
         </nav>
@@ -114,12 +118,16 @@ export const Layout = () => {
                         : 'text-neutral-500 hover:text-neutral-300'
                     }`}
                 >
-                    <div className={`relative p-1.5 rounded-xl transition-all ${({ isActive }: any) => isActive ? 'bg-orange-500/10' : ''}`}>
-                         <item.icon size={22} strokeWidth={({ isActive }: any) => isActive ? 2.5 : 2} />
-                         {/* Active Dot indicator */}
-                         <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-orange-500 transition-opacity ${({ isActive }: any) => isActive ? 'opacity-100' : 'opacity-0'}`}></span>
-                    </div>
-                    <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+                    {({ isActive }) => (
+                        <>
+                            <div className={`relative p-1.5 rounded-xl transition-all ${isActive ? 'bg-orange-500/10' : ''}`}>
+                                <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                                {/* Active Dot indicator */}
+                                <span className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-orange-500 transition-opacity ${isActive ? 'opacity-100' : 'opacity-0'}`}></span>
+                            </div>
+                            <span className="text-[10px] font-medium tracking-wide">{item.label}</span>
+                        </>
+                    )}
                 </NavLink>
             ))}
         </div>

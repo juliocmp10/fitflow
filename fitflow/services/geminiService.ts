@@ -72,7 +72,8 @@ export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial
       }
     });
 
-    let text = response.text;
+    // Ensure text is handled safely
+    let text = response.text || '';
     if (!text) return null;
 
     text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
