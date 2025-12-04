@@ -1,9 +1,18 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { UserProfile, WorkoutPlan, WorkoutDay, WorkoutSession } from "../types";
 
+// Helper para obter API KEY de forma segura em ambientes browser/vite
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY;
+  } catch (error) {
+    // Evita crash se process não estiver definido no navegador
+    return '';
+  }
+};
+
 // Initialize Gemini Client
-// In a real production app, ensure API_KEY is handled securely via backend proxy.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const ai = new GoogleGenAI({ apiKey: getApiKey() || '' });
 
 const MODEL_NAME = 'gemini-2.5-flash';
 
@@ -43,7 +52,8 @@ const workoutPlanSchema: Schema = {
 };
 
 export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial<WorkoutPlan> | null> => {
-  if (!process.env.API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     console.error("API Key missing");
     throw new Error("API Key is missing. Please configure it.");
   }
@@ -78,8 +88,11 @@ export const generateWorkoutPlan = async (profile: UserProfile): Promise<Partial
       }
     });
 
-    const text = response.text;
+    let text = response.text;
     if (!text) return null;
+
+    // Clean up markdown code blocks if present (fixes common JSON parse errors)
+    text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
 
     const data = JSON.parse(text);
 
@@ -121,7 +134,7 @@ export const adjustWorkoutSuggestion = async (
   history: WorkoutSession[]
 ): Promise<string> => {
    // Function to generate a text suggestion for progression
-   if (!process.env.API_KEY) return "Configure a API Key para receber sugestões.";
+   if (!getApiKey()) return "Configure a API Key para receber sugestões.";
 
    const prompt = `
     Analise o progresso recente do aluno.

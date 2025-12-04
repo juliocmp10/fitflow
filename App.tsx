@@ -12,7 +12,7 @@ import ActiveSession from './pages/ActiveSession';
 import ExerciseLibrary from './pages/ExerciseLibrary';
 import Profile from './pages/Profile';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   const { isAuthenticated } = useStore();
   const location = useLocation();
 
